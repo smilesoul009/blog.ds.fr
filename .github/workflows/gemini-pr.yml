@@ -35,18 +35,34 @@ jobs:
         run: |
           python - << 'EOF'
           import os
+          import time
           from google import genai
+          from google.genai import errors
 
           client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
           prompt = os.environ.get("USER_PROMPT")
 
-          response = client.models.generate_content(
-              model="gemini-3.8-flash",
-              contents=f"Ты автоматический ассистент. Обнови или создай файл README.md с учетом запроса: {prompt}. Верни ТОЛЬКО итоговый текст для файла без лишних пояснений."
-          )
+          max_retries = 5
+          base_delay = 2
 
-          with open("README.md", "w", encoding="utf-8") as f:
-              f.write(response.text)
+          for attempt in range(max_retries):
+              try:
+                  response = client.models.generate_content(
+                      model="gemini-3.8-flash",
+                      contents=f"Ты автоматический ассистент. Обнови или создай файл README.md с учетом запроса: {prompt}. Верни ТОЛЬКО итоговый текст для файла без лишних пояснений."
+                  )
+                  
+                  with open("README.md", "w", encoding="utf-8") as f:
+                      f.write(response.text)
+                  
+                  break  # Запрос успешен, выходим из цикла
+              except errors.ServerError as e:
+                  if attempt == max_retries - 1:
+                      print("Ошибка: исчерпаны все попытки подключения.")
+                      raise
+                  delay = base_delay * (2 ** attempt)
+                  print(f"Сервер перегружен. Ожидание {delay} сек. перед попыткой {attempt + 2}...")
+                  time.sleep(delay)
           EOF
 
       - name: Create Pull Request
