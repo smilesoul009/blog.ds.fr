@@ -1,0 +1,60 @@
+name: Gemini Auto PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Опишите задачу для Gemini'
+        required: true
+        default: 'Добавь описание проекта в README.md'
+
+jobs:
+  generate-changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install google-genai
+
+      - name: Run Gemini script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          USER_PROMPT: ${{ github.event.inputs.prompt }}
+        run: |
+          python - << 'EOF'
+          import os
+          from google import genai
+
+          client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+          prompt = os.environ.get("USER_PROMPT")
+
+          response = client.models.generate_content(
+              model="gemini-2.5-flash",
+              contents=f"Ты автоматический ассистент. Обнови или создай файл README.md с учетом запроса: {prompt}. Верни ТОЛЬКО итоговый текст для файла без лишних пояснений."
+          )
+
+          with open("README.md", "w", encoding="utf-8") as f:
+              f.write(response.text)
+          EOF
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "auto: изменения от Gemini по запросу"
+          title: "Gemini: ${{ github.event.inputs.prompt }}"
+          body: "Pull Request создан автоматически через GitHub Actions с помощью Gemini API."
+          branch: "gemini-updates"
+          delete-branch: true
