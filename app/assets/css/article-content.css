@@ -1,0 +1,118 @@
+.article-sheet {
+    container-type: inline-size;
+    container-name: sheet;
+    background: rgb(255 255 255 / 0.85);
+    width: 100%;
+}
+
+.article-content {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    padding: 2.5rem 3rem;
+}
+
+.article-content::after {
+    content: '';
+    display: table;
+    clear: both;
+}
+
+.article-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+.article-content img.align-left {
+    float: left;
+    margin: 0.25rem 1.25rem 0.75rem 0;
+}
+
+.article-content img.align-right {
+    float: right;
+    margin: 0.25rem 0 0.75rem 1.25rem;
+}
+
+.article-content img.align-center {
+    display: block;
+    float: none;
+    margin-inline: auto;
+}
+
+.article-content :is(h1, h2, h3, hr, blockquote) {
+    clear: both;
+}
+
+.article-content h1 { font-size: 1.875rem; font-weight: 700; margin: 1.5rem 0 1rem; }
+.article-content h2 { font-size: 1.5rem; font-weight: 700; margin: 1.25rem 0 0.75rem; }
+.article-content h3 { font-size: 1.25rem; font-weight: 600; margin: 1rem 0 0.5rem; }
+
+.article-content p { margin: 0.75rem 0; }
+.article-content ul { list-style: disc; padding-left: 1.5rem; margin: 0.75rem 0; }
+.article-content ol { list-style: decimal; padding-left: 1.5rem; margin: 0.75rem 0; }
+.article-content li { margin: 0.25rem 0; }
+
+.article-content blockquote {
+    border-left: 4px solid #d1d5db;
+    padding-left: 1rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: #4b5563;
+}
+
+.article-content hr {
+    border: 0;
+    border-top: 1px solid #e5e7eb;
+    margin: 2rem 0;
+}
+
+@container sheet (max-width: 640px) {
+    .article-content {
+        padding: 1.5rem 1.25rem;
+        font-size: 15px;
+    }
+
+    .article-content h1 { font-size: 1.5rem; }
+    .article-content h2 { font-size: 1.25rem; }
+    .article-content h3 { font-size: 1.125rem; }
+
+    .article-content img.align-left,
+    .article-content img.align-right {
+        float: none;
+        display: block;
+        margin: 1rem auto;
+    }
+}
+
+/* В редакторе — тот же базовый шрифт, что и при чтении */
+.tiptap {
+    font-family: Inter, sans-serif;
+    font-size: 16px;
+}
+
+/* Номера и маркеры списков — цветом и начертанием как текст */
+.article-content li::marker,
+.tiptap li::marker {
+    color: var(--ui-text);
+    font-family: inherit;
+    font-size: 1em;
+    font-weight: 400;
+}
+
+/* Если у текста пункта явно выбран размер — номер берёт тот же */
+:is(.article-content, .tiptap) li:has(> p:first-child [style*="font-size: 8px"])::marker  { font-size: 8px; }
+:is(.article-content, .tiptap) li:has(> p:first-child [style*="font-size: 10px"])::marker { font-size: 10px; }
+:is(.article-content, .tiptap) li:has(> p:first-child [style*="font-size: 12px"])::marker { font-size: 12px; }
+:is(.article-content, .tiptap) li:has(> p:first-child [style*="font-size: 14px"])::marker { font-size: 14px; }
+:is(.article-content, .tiptap) li:has(> p:first-child [style*="font-size: 16px"])::marker { font-size: 16px; }
+:is(.article-content, .tiptap) li:has(> p:first-child [style*="font-size: 18px"])::marker { font-size: 18px; }
+:is(.article-content, .tiptap) li:has(> p:first-child [style*="font-size: 20px"])::marker { font-size: 20px; }
+:is(.article-content, .tiptap) li:has(> p:first-child [style*="font-size: 24px"])::marker { font-size: 24px; }
+:is(.article-content, .tiptap) li:has(> p:first-child [style*="font-size: 28px"])::marker { font-size: 28px; }
+:is(.article-content, .tiptap) li:has(> p:first-child [style*="font-size: 32px"])::marker { font-size: 32px; }
+:is(.article-content, .tiptap) li:has(> p:first-child [style*="font-size: 36px"])::marker { font-size: 36px; }
+:is(.article-content, .tiptap) li:has(> p:first-child [style*="font-size: 48px"])::marker { font-size: 48px; }
+
+/* То же для шрифта */
+:is(.article-content, .tiptap) li:has(> p:first-child [style*="Roboto"])::marker      { font-family: Roboto, sans-serif; }
+:is(.article-content, .tiptap) li:has(> p:first-child [style*="Merriweather"])::marker { font-family: Merriweather, serif; }
