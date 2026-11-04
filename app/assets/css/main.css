@@ -1,0 +1,227 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* Объявляем токены шрифтов для системы Tailwind v4 */
+@theme {
+    --font-inter: "Inter", sans-serif;
+    --font-roboto: "Roboto", sans-serif;
+    --font-merriweather: "Merriweather", serif;
+}
+
+@layer base {
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
+}
+
+.tiptap {
+    outline: none;
+}
+
+body {
+    background: transparent;
+}
+
+@theme {
+    --color-main: #B2B7BC;
+    --color-secondary: #CED4DA;
+    --color-sub-100: #ECEDEE;
+    --color-sub-200: #D3D7DB;
+    --color-sub-300: #D3D4D5;
+    --color-sub-400: #BDC0C4;
+    --color-sub-500: #8B8F92;
+    --color-sub-550: #83878B;
+    --color-control-base: #DEDEE0;
+    --color-control-hover: #D8DADD;
+
+    --shadow-control: 0 0 6px 1px rgba(0, 0, 0, 0.28);
+    --shadow-3xl: -3px 0 7px 2px rgba(0, 0, 0, 0.5), 3px 0 7px 2px rgba(0, 0, 0, 0.5);
+    --shadow-4xl: -6px 0 7px 2px rgba(0, 0, 0, 0.5), 6px 0 7px 2px rgba(0, 0, 0, 0.5);
+    --inset-shadow-left: inset -6px 0px 4px rgba(0, 0, 0, 0.25);
+    --inset-shadow-right: inset 6px 0px 4px rgba(0, 0, 0, 0.25);
+}
+
+:root {
+    --ui-primary: var(--color-sub-550);
+
+    --ui-bg: #FFFFFF;
+    --ui-bg-muted: #E3E5E7;
+    --ui-bg-elevated: var(--color-sub-200);
+    --ui-bg-accented: var(--color-sub-400);
+
+    --ui-text-highlighted: #1A1D20;
+    --ui-text: #2C3034;
+    --ui-text-toned: #495057;
+    --ui-text-muted: #6C757D;
+    --ui-text-dimmed: #868E96;
+
+    --ui-border: rgb(139 143 146 / 0.4);
+    --ui-border-muted: rgb(139 143 146 / 0.25);
+    --ui-border-accented: rgb(139 143 146 / 0.55);
+}
+
+.app-background {
+    background: linear-gradient(
+            178deg,
+            #ccd1d3 0%,
+            #b4bdba 22%,
+            #9aa79f 44%,
+            #8b9a92 62%,
+            #a3aca8 78%,
+            #8a9c97 100%
+    ) fixed;
+}
+
+.glass-panel {
+    background: rgb(206 212 218 / 0.72);
+    border: 0.5px solid rgb(255 255 255 / 0.45);
+}
+
+.login-background {
+    position: relative;
+    background:
+            radial-gradient(ellipse 26% 16% at 50% 62%, rgba(255,247,214,0.92) 0%, rgba(252,226,150,0.5) 45%, transparent 80%),
+            linear-gradient(to bottom,
+            #7fb4d8 0%,
+            #96c4e0 14%,
+            #b2d4e8 28%,
+            #cfe2ec 42%,
+            #ecdfc4 54%,
+            #f2d79e 60%,
+            #d8c99f 64%,
+            #a9bcc2 70%,
+            #7fa3b6 80%,
+            #6b93aa 90%,
+            #5d87a0 100%);
+}
+
+.login-background::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(25,50,70,0.26) 0%, rgba(25,50,70,0.09) 58%, transparent 84%);
+    pointer-events: none;
+}
+
+@utility btn-menu {
+    @apply flex items-center gap-2.5 ps-3 py-2.5 rounded-xs text-sm;
+    @apply bg-control-base/70 text-toned hover:text-highlighted;
+    @apply ring ring-inset ring-accented;
+    @apply hover:bg-control-hover hover:shadow-control hover:border-sub-500;
+    @apply disabled:bg-control-base;
+}
+
+@utility btn-menu-active {
+    /* hover — та же тень: иначе наведение на выбранный пункт меняло её на мягкую shadow-control из btn-menu */
+    @apply bg-control-hover shadow-nav-active hover:shadow-nav-active ring-2 border border-sub-500 text-highlighted;
+}
+
+@utility field-base {
+    @apply bg-default! rounded-xs!;
+    @apply ring ring-inset ring-accented;
+    @apply hover:bg-default hover:shadow-control;
+    @apply focus:ring-2 focus:ring-sub-550 focus:shadow-none;
+    @apply transition-shadow duration-150;
+    @apply h-9;
+}
+
+@theme {
+    /* Тень выбранного пункта меню (верхнего и бокового). Одна тень со всех сторон зрительно гуще сверху и снизу,
+       чем по бокам, поэтому две тени со сдвигом влево и вправо: по бокам тень шире и совпадает с верхней и нижней */
+    --shadow-nav-active: -4px 0 7px 2px rgba(0, 0, 0, 0.5), 4px 0 7px 2px rgba(0, 0, 0, 0.5);
+}
+
+@utility nav-tab {
+    @apply flex items-center px-5 text-sm whitespace-nowrap;
+    @apply text-toned border-r border-accented;
+    @apply hover:bg-control-hover hover:text-highlighted;
+    @apply transition-colors duration-150;
+}
+
+@utility nav-tab-right {
+    @apply flex items-center gap-2 px-4 text-sm whitespace-nowrap;
+    @apply text-toned border-l border-accented;
+    @apply hover:bg-control-hover hover:text-highlighted;
+    @apply transition-colors duration-150;
+}
+
+@utility nav-tab-active {
+    @apply text-highlighted bg-sub-100 relative;
+    border: 0.5px solid rgb(90 95 100 / 0.75);
+    /* Внутреннее серое кольцо — как у выбранного пункта бокового меню (ring-2 ring-inset ring-accented) */
+    box-shadow: inset 0 0 0 2px var(--ui-border-accented), var(--shadow-nav-active);
+}
+
+.nav-tab:hover,
+.nav-tab-right:hover {
+    @apply bg-sub-100;
+}
+
+.nav-tab,
+.nav-tab-right {
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+@utility page-block {
+    @apply bg-muted/90 rounded-xs border border-sub-500;
+}
+
+@utility page-card {
+    @apply bg-white/70 ring ring-inset ring-default rounded-sm;
+}
+
+@utility reader-chip {
+    @apply shrink-0 text-sm whitespace-nowrap px-3 py-1 rounded-full;
+    @apply bg-white/35 text-muted ring ring-inset ring-accented/60;
+    @apply hover:bg-white/70 hover:text-highlighted;
+    @apply transition-colors duration-150;
+}
+
+@utility reader-chip-active {
+    @apply bg-white text-highlighted ring-sub-550;
+    @apply hover:bg-white;
+}
+
+@utility reader-toggle {
+    @apply size-8 flex items-center justify-center rounded-xs;
+    @apply bg-white/35 text-muted ring ring-inset ring-accented/60;
+    @apply hover:bg-white/70 hover:text-highlighted;
+    @apply transition-colors duration-150;
+}
+
+@utility reader-toggle-active {
+    @apply bg-white text-highlighted ring-sub-550;
+    @apply hover:bg-white;
+}
+
+/* Запрет выделения и копирования */
+.no-copy {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none; /* меню «Копировать / Сохранить» при долгом нажатии на телефоне */
+}
+
+.no-copy img {
+    -webkit-user-drag: none;
+}
+
+/* Исключения: поля ввода и редактор */
+.no-copy :is(input, textarea, [contenteditable="true"]) {
+    user-select: text;
+    -webkit-user-select: text;
+    -webkit-touch-callout: default;
+}
+
+/* Курсор «плюс» для добавления задач в неделе и лупе */
+@utility cursor-plus {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 4v16M4 12h16' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M12 4v16M4 12h16' stroke='%23222' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") 12 12, crosshair;
+}
+
+@utility plan-scope {
+    @apply h-9 flex items-center justify-center rounded-xs text-sm whitespace-nowrap select-none;
+    @apply bg-control-base/70 text-toned ring ring-inset ring-accented;
+    @apply hover:bg-control-hover hover:text-highlighted;
+    @apply transition-colors duration-150;
+}

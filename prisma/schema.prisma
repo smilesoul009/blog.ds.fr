@@ -1,0 +1,513 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+  AUTHOR
+  CLIENT
+}
+
+enum ArticleStatus {
+  DRAFT
+  REVIEW
+  READY
+  ARCHIVED
+}
+
+enum BlockReviewStatus {
+  APPROVED
+  REJECTED
+}
+
+enum VersionReason {
+  SUBMITTED_FOR_REVIEW
+  RETURNED_TO_AUTHOR
+  PUBLISHED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  RESTORE
+  STATUS_CHANGE
+  LOGIN
+  BLOCK
+  UNBLOCK
+  VIEW_AS
+}
+
+model User {
+  id           String  @id @default(cuid())
+  username     String  @unique
+  email        String  @unique
+  passwordHash String
+  firstName    String? @default("")
+  lastName     String? @default("")
+  isActive     Boolean @default(true)
+  roles        Role[]  @default([AUTHOR])
+
+  ownedSpaces      Space[]              @relation("Owner")
+  ownedAreas       Area[]               @relation("AreaOwner")
+  accessibleSpaces UserSpace[]
+  authoredArticles ArticleAuthor[]
+  areas            UserArea[]
+  blockReviews     ArticleBlockReview[]
+  statusLogs       ArticleStatusLog[]
+  articleVersions  ArticleVersion[]
+  auditLogs        AuditLog[]
+  wallpapers       Wallpaper[]
+  articles         Article[]
+  planTasks        PlanTask[]
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletionRequestedAt DateTime?
+  deletedAt           DateTime?
+
+  clientLibrary    ClientArticle[] @relation("ClientLibrary")
+  assignedArticles ClientArticle[] @relation("AssignedArticles")
+  clientMarks      ClientAuthor[]  @relation("ClientMarks")
+  authorMarks      ClientAuthor[]  @relation("AuthorMarks")
+
+  blockedArticles Article[]    @relation("BlockedArticles")
+  blockReplies    Article[]    @relation("BlockReplies")
+  planReviews     PlanReview[]
+  planGoals       PlanGoal[]
+  notifications   Notification[]
+
+  // Часовой пояс браузера (IANA, например Asia/Vladivostok) — для напоминаний
+  timezone       String?
+  // Настройки уведомлений: только отличия от умолчаний (shared/constants/notifications.ts)
+  notifySettings Json?
+
+  @@index([deletionRequestedAt])
+}
+
+model Area {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+
+  ownerId String?
+  owner   User?   @relation("AreaOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  articles Article[]
+  users    UserArea[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model UserArea {
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  areaId String
+  area   Area   @relation(fields: [areaId], references: [id], onDelete: Cascade)
+
+  @@id([userId, areaId])
+}
+
+model Space {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+
+  ownerId String
+  owner   User   @relation("Owner", fields: [ownerId], references: [id], onDelete: Restrict)
+
+  articles    SpaceArticle[]
+  users       UserSpace[]
+  accessLinks SpaceAccessLink[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+}
+
+model UserSpace {
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  spaceId String
+  space   Space  @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@id([userId, spaceId])
+}
+
+model SpaceArticle {
+  spaceId   String
+  space     Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  articleId String
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  position  Int      @default(0)
+  addedAt   DateTime @default(now())
+
+  @@id([spaceId, articleId])
+  @@index([spaceId, position])
+}
+
+model SpaceAccessLink {
+  id         String    @id @default(cuid())
+  token      String    @unique
+  spaceId    String
+  space      Space     @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  label      String?
+  expiresAt  DateTime?
+  revokedAt  DateTime?
+  lastSeenAt DateTime?
+  viewCount  Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  @@index([spaceId])
+}
+
+model Article {
+  id        String        @id @default(cuid())
+  title     String
+  slug      String        @unique
+  content   Json
+  plainText String        @default("")
+  images    Json?
+  status    ArticleStatus @default(DRAFT)
+
+  publishedAt DateTime?
+  archivedAt  DateTime?
+
+  areaId String
+  area   Area   @relation(fields: [areaId], references: [id], onDelete: Restrict)
+
+  spaces     SpaceArticle[]
+  authors    ArticleAuthor[]
+  reviews    ArticleBlockReview[]
+  statusLogs ArticleStatusLog[]
+  versions   ArticleVersion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  isStarter Boolean @default(false)
+
+  clientLinks ClientArticle[]
+
+  blockedAt   DateTime?
+  blockedById String?
+  blockedBy   User?     @relation("BlockedArticles", fields: [blockedById], references: [id], onDelete: SetNull)
+  blockReason String?
+
+  blockReply     String?
+  blockReplyAt   DateTime?
+  blockReplyById String?
+  blockReplyBy   User?     @relation("BlockReplies", fields: [blockReplyById], references: [id], onDelete: SetNull)
+
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+
+  @@index([status])
+  @@index([areaId])
+  @@index([isStarter])
+  @@index([blockedAt])
+}
+
+model ArticleAuthor {
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  articleId String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, articleId])
+}
+
+model ArticleBlockReview {
+  id          String            @id @default(cuid())
+  articleId   String
+  article     Article           @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  blockId     String
+  status      BlockReviewStatus
+  comment     String?
+  contentHash String
+
+  resolvedAt      DateTime?
+  resolvedComment String?
+
+  reviewerId String
+  reviewer   User   @relation(fields: [reviewerId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([articleId, blockId])
+  @@index([articleId])
+}
+
+model ArticleStatusLog {
+  id         String         @id @default(cuid())
+  articleId  String
+  article    Article        @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  fromStatus ArticleStatus?
+  toStatus   ArticleStatus
+  comment    String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+
+  @@index([articleId, createdAt])
+}
+
+model ArticleVersion {
+  id        String  @id @default(cuid())
+  articleId String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  number  Int
+  title   String
+  content Json
+
+  reason VersionReason
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+
+  @@unique([articleId, number])
+  @@index([articleId, createdAt])
+}
+
+model ClientArticle {
+  clientId  String
+  client    User    @relation("ClientLibrary", fields: [clientId], references: [id], onDelete: Cascade)
+  articleId String
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  assignedById String?
+  assignedBy   User?   @relation("AssignedArticles", fields: [assignedById], references: [id], onDelete: SetNull)
+  comment      String?
+
+  assignedAt  DateTime?
+  readAt      DateTime?
+  favoritedAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@id([clientId, articleId])
+  @@index([clientId, assignedAt])
+  @@index([clientId, favoritedAt])
+}
+
+model ClientAuthor {
+  clientId String
+  client   User   @relation("ClientMarks", fields: [clientId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation("AuthorMarks", fields: [authorId], references: [id], onDelete: Cascade)
+
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@id([clientId, authorId])
+  @@index([authorId])
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  action     AuditAction
+  entityType String
+  entityId   String
+  entityName String?
+
+  snapshot Json?
+  changes  Json?
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([action])
+}
+
+enum WallpaperDevice {
+  DESKTOP
+  MOBILE
+}
+
+enum WallpaperSlot {
+  LOGIN
+  APP
+  LOGOUT
+  CLIENT
+}
+
+model Wallpaper {
+  id        String          @id @default(cuid())
+  fileName  String
+  url       String
+  thumbUrl  String
+  device    WallpaperDevice @default(DESKTOP)
+  width     Int
+  height    Int
+  sizeBytes Int
+
+  uploadedById String?
+  uploadedBy   User?   @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  assignments WallpaperAssignment[]
+  createdAt   DateTime              @default(now())
+
+  @@index([device])
+}
+
+model WallpaperAssignment {
+  wallpaperId String
+  wallpaper   Wallpaper     @relation(fields: [wallpaperId], references: [id], onDelete: Cascade)
+  slot        WallpaperSlot
+  position    Int           @default(0)
+
+  @@id([wallpaperId, slot])
+  @@index([slot, position])
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+enum PlanScope {
+  THREE_YEARS
+  TWO_YEARS
+  YEAR
+  MONTH
+  WEEK
+  DAY
+}
+
+enum PlanStatus {
+  TODO
+  DONE
+  PARTIAL
+}
+
+model PlanTask {
+  id          String     @id @default(cuid())
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scope       PlanScope
+  periodStart DateTime   @db.Date
+  position    Int        @default(0)
+  title       String
+  description String?
+  status      PlanStatus @default(TODO)
+  day         DateTime?  @db.Date
+  startMin    Int?
+  endMin      Int?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // Итог: что получилось или почему не выполнено
+  comment   String?
+  // Сколько раз задачу переносили (у копии — число переносов цепочки)
+  moveCount Int       @default(0)
+
+  movedAt   DateTime?
+  movedToId String?   @unique
+  movedTo   PlanTask? @relation("PlanMove", fields: [movedToId], references: [id], onDelete: SetNull)
+  movedFrom PlanTask? @relation("PlanMove")
+
+  // В «Удалённых» с этого момента (через 30 дней удаляется навсегда); null — живая
+  deletedAt DateTime?
+
+  @@index([userId, scope, periodStart])
+  @@index([userId, deletedAt])
+}
+
+model PlanReview {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scope       PlanScope
+  periodStart DateTime  @db.Date
+  note        String    @default("")
+  reviewedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([userId, scope, periodStart])
+}
+
+// Уведомления на сайте (колокольчик). Общие для всего сайта: тип, текст, ссылка
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String?
+  link      String?
+  data      Json?
+  // Защита от повторов: одно напоминание на пользователя, вид и период
+  dedupeKey String?   @unique
+  // Когда показать (для «Отложить» — позже)
+  showAt    DateTime  @default(now())
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt, showAt])
+}
+
+// Цели: список этапов достижения. Прогресс считается по этапам
+model PlanGoal {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  dueDate     DateTime?      @db.Date
+  // Своё напоминание о сроке ({daysBefore, soonSlot, daySlot}); null — по общим настройкам
+  remind      Json?
+  position    Int            @default(0)
+  // Архив целей 1.8.0 (больше не используется, заменён «Удалёнными»; колонка оставлена)
+  archivedAt  DateTime?
+  // В «Удалённых» с этого момента (через 30 дней удаляется навсегда); null — живая
+  deletedAt   DateTime?
+  steps       PlanGoalStep[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([userId, position])
+  @@index([userId, archivedAt])
+  @@index([userId, deletedAt])
+}
+
+model PlanGoalStep {
+  id          String     @id @default(cuid())
+  goalId      String
+  goal        PlanGoal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  comment     String?
+  status      PlanStatus @default(TODO)
+  dueDate     DateTime?  @db.Date
+  // Своё напоминание о сроке ({daysBefore, soonSlot, daySlot}); null — по общим настройкам
+  remind      Json?
+  position    Int        @default(0)
+  // В «Удалённых» с этого момента (через 30 дней удаляется навсегда); null — живой
+  deletedAt   DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([goalId, position])
+  @@index([goalId, deletedAt])
+}
