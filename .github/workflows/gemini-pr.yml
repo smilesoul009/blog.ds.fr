@@ -19,14 +19,18 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Create new branch
+        run: |
+          git checkout -b gemini-updates-${{ github.run_id }}
+          git push -u origin gemini-updates-${{ github.run_id }}
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: |
-          pip install google-genai
+        run: pip install google-genai
 
       - name: Run Gemini script
         env:
@@ -38,30 +42,26 @@ jobs:
           import time
           from google import genai
           from google.genai import errors
-
+          
           client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
           prompt = os.environ.get("USER_PROMPT")
-
+          
           max_retries = 5
           base_delay = 2
-
+          
           for attempt in range(max_retries):
               try:
                   response = client.models.generate_content(
                       model="gemini-3.8-flash",
                       contents=f"Ты автоматический ассистент. Обнови или создай файл README.md с учетом запроса: {prompt}. Верни ТОЛЬКО итоговый текст для файла без лишних пояснений."
                   )
-                  
                   with open("README.md", "w", encoding="utf-8") as f:
                       f.write(response.text)
-                  
-                  break  # Запрос успешен, выходим из цикла
+                  break
               except errors.ServerError as e:
                   if attempt == max_retries - 1:
-                      print("Ошибка: исчерпаны все попытки подключения.")
                       raise
                   delay = base_delay * (2 ** attempt)
-                  print(f"Сервер перегружен. Ожидание {delay} сек. перед попыткой {attempt + 2}...")
                   time.sleep(delay)
           EOF
 
@@ -72,5 +72,5 @@ jobs:
           commit-message: "auto: изменения от Gemini по запросу"
           title: "Gemini: ${{ github.event.inputs.prompt }}"
           body: "Pull Request создан автоматически через GitHub Actions с помощью Gemini API."
-          branch: "gemini-updates"
+          branch: "gemini-updates-${{ github.run_id }}"
           delete-branch: true
