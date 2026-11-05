@@ -28,7 +28,6 @@ jobs:
         run: |
           pip install google-genai
 
-
       - name: Run Gemini script
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -89,7 +88,6 @@ jobs:
               print(f"Другая ошибка: {type(e).__name__}: {e}")
               raise
           EOF
-      
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
