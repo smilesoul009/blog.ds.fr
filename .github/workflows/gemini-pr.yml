@@ -47,7 +47,7 @@ jobs:
               try:
                   print(f"Попытка запроса {attempt + 1}...")
                   response = client.models.generate_content(
-                      model="gemini-2.5-flash-lite",
+                      model="gemini-3.8-flash",
                       contents=f"Ты автоматический ассистент. Обнови или создай файл README.md с учетом запроса: {prompt}. Верни ТОЛЬКО готовый текст файла Markdown без лишних пояснений."
                   )
                   with open("README.md", "w", encoding="utf-8") as f:
