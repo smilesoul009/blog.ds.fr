@@ -1,0 +1,100 @@
+name: Gemini Auto PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Опишите задачу для Gemini'
+        required: true
+        default: 'Добавь описание проекта в README.md'
+
+jobs:
+  generate-changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install google-genai
+
+      - name: Run Gemini script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          USER_PROMPT: ${{ github.event.inputs.prompt }}
+        run: |
+          python - << 'EOF'
+          import os
+          import sys
+          from google import genai
+          from google.genai import errors
+
+          api_key = os.environ.get("GEMINI_API_KEY")
+          prompt = os.environ.get("USER_PROMPT", "").strip()
+
+          if not api_key:
+              raise RuntimeError("GEMINI_API_KEY не задан!")
+
+          if not prompt:
+              raise RuntimeError("Пустой пользовательский запрос!")
+
+          client = genai.Client(api_key=api_key)
+
+          try:
+              print("Отправляем запрос Gemini...")
+              print("Модель: gemini-3.5-flash")
+
+              response = client.models.generate_content(
+                  model="gemini-3.5-flash",
+                  contents=f"""
+          Ты автоматический разработчик проекта.
+
+          Задача:
+          {prompt}
+
+          Проанализируй задачу и обнови или создай README.md.
+          Верни только готовое содержимое Markdown-файла.
+          Не добавляй пояснения до или после документа.
+          """
+              )
+
+              result = response.text
+
+              if not result or not result.strip():
+                  raise RuntimeError("Gemini вернула пустой ответ!")
+
+              with open("README.md", "w", encoding="utf-8") as f:
+                  f.write(result.strip() + "\n")
+
+              print("README.md успешно обновлен!")
+
+          except errors.APIError as e:
+              print(f"ОШИБКА GEMINI API")
+              print(f"HTTP-код: {e.code}")
+              print(f"Описание: {e.message}")
+              raise
+
+          except Exception as e:
+              print(f"Другая ошибка: {type(e).__name__}: {e}")
+              raise
+          EOF
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "auto: правки от Gemini"
+          title: "Gemini: ${{ github.event.inputs.prompt }}"
+          body: "Pull Request создан автоматически через GitHub Actions."
+          branch: "gemini-patch-${{ github.run_id }}"
+          delete-branch: true
