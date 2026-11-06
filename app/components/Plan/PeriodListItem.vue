@@ -25,7 +25,7 @@ withDefaults(defineProps<{
     <span class="min-w-0" :class="type === 'week' && 'tracking-[0.6px]'">{{ label }}</span>
     <span
         v-if="hasTasks"
-        class="size-[5px] shrink-0 rounded-full bg-toned"
+        class="size-[5px] shrink-0 rounded-full bg-[var(--ui-text-toned)]"
         aria-label="Есть задачи"
         title="Есть задачи"
     />
