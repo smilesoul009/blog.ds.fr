@@ -42,7 +42,7 @@ const fullscreen = computed({
 
 <template>
   <PlanShell v-model:fullscreen="fullscreen">
-    <Page :fit="kind === 'day' || kind === 'weekly'">
+    <Page fit>
       <template #header>
         <Header>
           {{ year }} — выберите {{ PICK_WHAT[kind] }}
