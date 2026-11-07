@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {MONTHS, addDays, mondayOf, pad, parseISO, todayISO} from '~~/shared/utils/planDates'
+import {MONTHS, addDays, mondayOf, pad, parseISO, todayISO, weekDateRange} from '~~/shared/utils/planDates'
 
 const props = withDefaults(defineProps<{ year: number; marks?: string[]; kind?: 'week' | 'weekly'; current?: string }>(), {
   kind: 'week',
@@ -13,18 +13,6 @@ interface WeekItem {
 interface MonthGroup {
   month: string
   weeks: WeekItem[]
-}
-
-function shortDate(iso: string): string {
-  return `${iso.slice(8)}.${iso.slice(5, 7)}`
-}
-
-function dateRange(start: string, end: string): string {
-  const startYear = start.slice(0, 4)
-  const endYear = end.slice(0, 4)
-  if (startYear !== endYear) return `${shortDate(start)}.${startYear}–${shortDate(end)}.${endYear}`
-  if (start.slice(5, 7) === end.slice(5, 7)) return `${start.slice(8)}–${shortDate(end)}.${endYear}`
-  return `${shortDate(start)}–${shortDate(end)}.${endYear}`
 }
 
 // По ISO неделя принадлежит году своего четверга.
@@ -43,7 +31,7 @@ const groups = computed<MonthGroup[]>(() => {
     }
     group.weeks.push({
       key,
-      label: `${pad(index)} неделя    ·    ${dateRange(key, addDays(key, 6))}`,
+      label: `${pad(index)} неделя    ·    ${weekDateRange(key, addDays(key, 6))}`,
     })
   }
   return result
