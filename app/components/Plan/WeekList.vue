@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {MONTHS, addDays, mondayOf, pad, parseISO, todayISO} from '~~/shared/utils/planDates'
 
-const props = withDefaults(defineProps<{ year: number; marks?: string[]; kind?: 'week' | 'weekly' }>(), {
+const props = withDefaults(defineProps<{ year: number; marks?: string[]; kind?: 'week' | 'weekly'; current?: string }>(), {
   kind: 'week',
 })
 const marked = computed(() => new Set(props.marks ?? []))
@@ -134,6 +134,7 @@ watch(() => [props.year, props.kind] as const, async ([_year, newKind], [previou
               :label="week.label"
               :to="`/plan/${kind}/${week.key}`"
               :has-tasks="marked.has(week.key)"
+              :current="week.key === current"
               @click="savePosition"
           />
         </div>
