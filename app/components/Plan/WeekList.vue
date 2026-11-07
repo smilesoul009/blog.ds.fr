@@ -51,8 +51,8 @@ const groups = computed<MonthGroup[]>(() => {
 <template>
   <div>
     <p class="mb-2 text-sm text-toned">Недели {{ year }} года · переход к задачам выбранной недели</p>
-    <div class="flex flex-col">
-      <section v-for="group in groups" :key="group.month">
+    <div class="flex flex-col gap-1.5">
+      <section v-for="group in groups" :key="group.month" class="flex flex-col gap-1.5">
         <div class="flex flex-col gap-[3px] pb-[7px] pt-[10px]">
           <h2 class="text-sm font-medium text-toned">{{ group.month }}</h2>
           <div class="h-px bg-[var(--ui-border-muted)]" aria-hidden="true"/>
@@ -64,7 +64,6 @@ const groups = computed<MonthGroup[]>(() => {
               :to="`/plan/week/${week.key}`"
               :has-tasks="marked.has(week.key)"
           />
-          <div class="h-px bg-[var(--ui-border-muted)]" aria-hidden="true"/>
         </template>
       </section>
     </div>
