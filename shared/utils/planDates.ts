@@ -70,6 +70,20 @@ export function addDays(iso: string, n: number): string {
     return toISO(d)
 }
 
+// Единый компактный диапазон недели для списка выбора и заголовка задач.
+// Внутри месяца: 02–08.11.2026; между месяцами: 30.11–06.12.2026;
+// между годами: 28.12.2026–03.01.2027.
+export function weekDateRange(start: string, end: string): string {
+    const shortDate = (iso: string) => `${iso.slice(8)}.${iso.slice(5, 7)}`
+    if (start.slice(0, 4) !== end.slice(0, 4)) {
+        return `${shortDate(start)}.${start.slice(0, 4)}–${shortDate(end)}.${end.slice(0, 4)}`
+    }
+    if (start.slice(5, 7) === end.slice(5, 7)) {
+        return `${start.slice(8)}–${shortDate(end)}.${end.slice(0, 4)}`
+    }
+    return `${shortDate(start)}–${shortDate(end)}.${end.slice(0, 4)}`
+}
+
 export function mondayOf(iso: string): string {
     const diff = (parseISO(iso).getUTCDay() + 6) % 7
     return addDays(iso, -diff)
@@ -217,11 +231,7 @@ export function periodTitle(scope: PlanScopeKey, key: string): string {
             const endDate = new Date(startDate.getTime());
             endDate.setUTCDate(endDate.getUTCDate() + 6);
 
-            const startDay = startDate.getUTCDate().toString().padStart(2, '0');
-            const endFullDate = dateFormatter.format(endDate);
-
-            // Результат: "7 неделя, 09-15.02.2026"
-            return `${weekNumber} неделя, ${startDay}-${endFullDate}`;
+            return `${weekNumber} неделя, ${weekDateRange(key, toISO(endDate))}`;
         }
 
         case 'day': {

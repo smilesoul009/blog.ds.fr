@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import {MONTHS, addDays, mondayOf, pad, parseISO, todayISO} from '~~/shared/utils/planDates'
+import {MONTHS, addDays, mondayOf, pad, parseISO, todayISO, weekDateRange} from '~~/shared/utils/planDates'
 
-const props = defineProps<{ year: number; marks?: string[] }>()
+const props = withDefaults(defineProps<{ year: number; marks?: string[]; kind?: 'week' | 'weekly'; current?: string }>(), {
+  kind: 'week',
+})
 const marked = computed(() => new Set(props.marks ?? []))
 
 interface WeekItem {
@@ -11,18 +13,6 @@ interface WeekItem {
 interface MonthGroup {
   month: string
   weeks: WeekItem[]
-}
-
-function shortDate(iso: string): string {
-  return `${iso.slice(8)}.${iso.slice(5, 7)}`
-}
-
-function dateRange(start: string, end: string): string {
-  const startYear = start.slice(0, 4)
-  const endYear = end.slice(0, 4)
-  if (startYear !== endYear) return `${shortDate(start)}.${startYear}–${shortDate(end)}.${endYear}`
-  if (start.slice(5, 7) === end.slice(5, 7)) return `${start.slice(8)}–${shortDate(end)}.${endYear}`
-  return `${shortDate(start)}–${shortDate(end)}.${endYear}`
 }
 
 // По ISO неделя принадлежит году своего четверга.
@@ -41,7 +31,7 @@ const groups = computed<MonthGroup[]>(() => {
     }
     group.weeks.push({
       key,
-      label: `${pad(index)} неделя    ·    ${dateRange(key, addDays(key, 6))}`,
+      label: `${pad(index)} неделя    ·    ${weekDateRange(key, addDays(key, 6))}`,
     })
   }
   return result
@@ -51,7 +41,10 @@ const groups = computed<MonthGroup[]>(() => {
 // не восстанавливает положение списка при возврате из задач недели.
 const root = ref<HTMLElement | null>(null)
 let scroller: HTMLElement | null = null
-const positionKey = () => `plan-week-list-scroll:${props.year}`
+// Сохраняем прежние ключи обычной недели, чтобы позиции пользователей не потерялись.
+const positionKey = (year = props.year) => props.kind === 'weekly'
+    ? `plan-weekly-list-scroll:${year}`
+    : `plan-week-list-scroll:${year}`
 
 function savePosition() {
   if (!scroller) return
@@ -101,11 +94,13 @@ onBeforeUnmount(() => {
   scroller = null
 })
 
-watch(() => props.year, async (_year, previousYear) => {
+watch(() => [props.year, props.kind] as const, async ([_year, newKind], [previousYear, previousKind]) => {
   // При смене года старую прокрутку сохраняем под ключом предыдущего года.
   if (!scroller) return
   try {
-    sessionStorage.setItem(`plan-week-list-scroll:${previousYear}`, String(scroller.scrollTop))
+    sessionStorage.setItem(previousKind === 'weekly'
+        ? `plan-weekly-list-scroll:${previousYear}`
+        : `plan-week-list-scroll:${previousYear}`, String(scroller.scrollTop))
   } catch {}
   await nextTick()
   restorePosition()
@@ -114,7 +109,7 @@ watch(() => props.year, async (_year, previousYear) => {
 
 <template>
   <div ref="root">
-    <p class="mb-2 text-sm text-toned">Недели {{ year }} года · переход к задачам выбранной недели</p>
+    <p class="mb-2 text-sm text-toned">Недели {{ year }} года · переход к {{ kind === 'weekly' ? 'еженедельному плану' : 'задачам выбранной недели' }}</p>
     <div class="flex flex-col gap-1.5">
       <section v-for="group in groups" :key="group.month" class="flex flex-col gap-1.5">
         <div class="flex flex-col gap-[3px] pb-[7px] pt-[10px]">
@@ -125,8 +120,9 @@ watch(() => props.year, async (_year, previousYear) => {
           <PlanPeriodListItem
               type="week"
               :label="week.label"
-              :to="`/plan/week/${week.key}`"
+              :to="`/plan/${kind}/${week.key}`"
               :has-tasks="marked.has(week.key)"
+              :current="week.key === current"
               @click="savePosition"
           />
         </div>

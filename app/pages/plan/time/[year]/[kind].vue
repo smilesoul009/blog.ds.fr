@@ -4,7 +4,7 @@ import {
   PICK_CURRENT, PICK_MODE, PICK_WHAT, TIME_LABEL, currentKey, isPickKind, isPlanYear, listPath, type PickKind,
 } from '~~/shared/utils/planYears'
 
-// Месяц и Неделя — отдельные списки по макету Figma; День и Еженедельный — существующий календарь года.
+// Месяц — список месяцев; Неделя и Еженедельный план — общий список недель; День — календарь года.
 // Клик по дню / неделе / месяцу — список этого периода (или сетка недели). «Текущий …» — сразу текущий период;
 // если выбран не текущий год, переходит на текущий год (меню слева переключится само — год берётся из адреса)
 const route = useRoute()
@@ -30,31 +30,34 @@ function open(key: string) {
   navigateTo(listPath(kind.value, key))
 }
 
-// Полный экран — тот же, что у списков плана (кука), чтобы переход из меню не выходил из него
-const fullscreenCookie = useCookie<boolean>('plan-fullscreen', {default: () => false, maxAge: 60 * 60 * 24 * 365, sameSite: 'lax'})
-const hydrated = ref(false)
-onMounted(() => (hydrated.value = true))
-const fullscreen = computed({
-  get: () => hydrated.value && !!fullscreenCookie.value,
-  set: (v: boolean) => (fullscreenCookie.value = v),
-})
+// Общее состояние полного экрана контролируется постоянным layout «Плана».
+const fullscreen = useState<boolean>('plan-fullscreen-active', () => false)
+
 </script>
 
 <template>
-  <PlanShell v-model:fullscreen="fullscreen">
-    <Page fit>
+  <Page fit>
       <template #header>
         <Header>
           {{ year }} — выберите {{ PICK_WHAT[kind] }}
           <span v-if="kind === 'weekly'" class="text-toned font-normal">({{ TIME_LABEL.weekly.toLowerCase() }})</span>
           <template #right>
             <HeaderLink :to="listPath(kind, current)" :label="PICK_CURRENT[kind]" icon="i-lucide-house"/>
+            <UTooltip :text="fullscreen ? 'Свернуть' : 'Развернуть'">
+              <UButton
+                  :icon="fullscreen ? 'i-lucide-minimize-2' : 'i-lucide-maximize-2'"
+                  :aria-label="fullscreen ? 'Свернуть' : 'Развернуть'"
+                  color="neutral"
+                  variant="outline"
+                  @click="fullscreen = !fullscreen"
+              />
+            </UTooltip>
           </template>
         </Header>
       </template>
 
-      <PlanMonthList v-if="kind === 'month'" :year="year" :marks="data?.keys ?? []"/>
-      <PlanWeekList v-else-if="kind === 'week'" :year="year" :marks="data?.keys ?? []"/>
+      <PlanMonthList v-if="kind === 'month'" :year="year" :marks="data?.keys ?? []" :current="current"/>
+      <PlanWeekList v-else-if="kind === 'week' || kind === 'weekly'" :year="year" :kind="kind" :marks="data?.keys ?? []" :current="current"/>
       <PlanYearCalendar
           v-else
           :year="year"
@@ -63,6 +66,5 @@ const fullscreen = computed({
           :current="current"
           @select="open"
       />
-    </Page>
-  </PlanShell>
+  </Page>
 </template>

@@ -21,13 +21,12 @@ const fullscreen = defineModel<boolean>('fullscreen', {default: false})
           contained
           class="flex-1 min-h-0 flex flex-col pt-2"
       >
-        <!-- Меню раздела видно и на полном экране: переход к другому плану без выхода из него -->
+        <!-- Меню и текущая страница передаются из постоянного layout раздела «План». -->
         <div class="flex-1 flex min-h-0">
-          <PlanSectionMenu/>
           <slot/>
         </div>
       </WallpaperBackground>
     </template>
   </UModal>
-  <slot v-else/>
+  <div v-else class="contents"><slot/></div>
 </template>

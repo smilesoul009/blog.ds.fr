@@ -6,6 +6,23 @@ const route = useRoute()
 const wallpaperSlot = computed(() => (route.meta.wallpaperSlot as any) ?? 'APP')
 const { mainItems, settingsItems, inSettings, settingsEntry, inPlan } = useNavigation()
 
+// Полноэкранный режим «Плана» живёт в layout, а не в отдельных страницах:
+// при смене периода и переходе к «Временным» / году модальное окно не пересоздаётся.
+const planFullscreen = useState<boolean>('plan-fullscreen-active', () => false)
+const planFullscreenCookie = useCookie<boolean>('plan-fullscreen', {
+  default: () => false,
+  maxAge: 60 * 60 * 24 * 365,
+  sameSite: 'lax',
+})
+const planFullscreenReady = ref(false)
+onMounted(() => {
+  planFullscreen.value = !!planFullscreenCookie.value
+  planFullscreenReady.value = true
+})
+watch(planFullscreen, value => {
+  if (planFullscreenReady.value) planFullscreenCookie.value = value
+})
+
 const { can } = usePermissions()
 const api = useApi()
 
@@ -76,8 +93,11 @@ function isActive(to: string) {
 
     <div class="flex-1 flex min-h-0">
       <SideMenu v-if="inSettings" :items="settingsItems" fill :is-active="item => isActive(item.to ?? '')"/>
-      <PlanSectionMenu v-else-if="inPlan"/>
-      <slot />
+      <PlanShell v-if="inPlan" v-model:fullscreen="planFullscreen">
+        <PlanSectionMenu/>
+        <slot/>
+      </PlanShell>
+      <slot v-else/>
     </div>
   </WallpaperBackground>
 </template>

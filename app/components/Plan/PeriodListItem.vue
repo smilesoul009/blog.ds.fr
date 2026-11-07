@@ -8,9 +8,11 @@ withDefaults(defineProps<{
   to: string
   type?: 'month' | 'week'
   hasTasks?: boolean
+  current?: boolean
 }>(), {
   type: 'month',
   hasTasks: false,
+  current: false,
 })
 </script>
 
@@ -28,6 +30,13 @@ withDefaults(defineProps<{
         class="size-[5px] shrink-0 rounded-full bg-[var(--ui-text-toned)]"
         aria-label="Есть задачи"
         title="Есть задачи"
+    />
+    <UIcon
+        v-if="current"
+        name="i-lucide-house"
+        class="ms-auto size-4 shrink-0 text-toned"
+        aria-label="Текущий период"
+        title="Текущий период"
     />
   </NuxtLink>
 </template>
