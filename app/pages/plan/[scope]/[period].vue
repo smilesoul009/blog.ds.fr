@@ -55,20 +55,8 @@ const isWeekPlan = weekly
 const gridTasks = computed(() => tasks.value.filter(t => t.day))
 const listTasks = computed(() => (scope.value === 'week' ? tasks.value.filter(t => !t.day) : tasks.value))
 
-// Полный экран запоминается в cookie. Открываем его только после загрузки страницы в браузере,
-// чтобы окно на весь экран не рисовалось на сервере
-const fullscreenCookie = useCookie<boolean>('plan-fullscreen', {
-  default: () => false,
-  maxAge: 60 * 60 * 24 * 365,
-  sameSite: 'lax',
-})
-const hydrated = ref(false)
-onMounted(() => (hydrated.value = true))
-
-const fullscreen = computed({
-  get: () => hydrated.value && !!fullscreenCookie.value,
-  set: (value: boolean) => (fullscreenCookie.value = value),
-})
+// Общее состояние полного экрана контролируется постоянным layout «Плана».
+const fullscreen = useState<boolean>('plan-fullscreen-active', () => false)
 
 const list = ref<{ focusAdd: () => void; focusItem?: (id: string) => void } | null>(null)
 // Режим итогов: показывается вместо списка; изменения копятся в черновике панели
@@ -283,8 +271,7 @@ useEventListener(import.meta.client ? window : undefined, 'keydown', onHotkey)
 
 <template>
   <div class="contents">
-    <PlanShell v-model:fullscreen="fullscreen">
-      <Page>
+    <Page>
         <!-- В режиме итогов шапка плана скрыта: переходить некуда, пока итоги не завершены -->
         <template v-if="!reviewMode" #header>
           <PlanHeader
@@ -361,7 +348,6 @@ useEventListener(import.meta.client ? window : undefined, 'keydown', onHotkey)
         />
 
         <PlanHotkeysModal v-model:open="helpOpen"/>
-      </Page>
-    </PlanShell>
+    </Page>
   </div>
 </template>
