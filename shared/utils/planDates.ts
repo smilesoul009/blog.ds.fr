@@ -217,11 +217,16 @@ export function periodTitle(scope: PlanScopeKey, key: string): string {
             const endDate = new Date(startDate.getTime());
             endDate.setUTCDate(endDate.getUTCDate() + 6);
 
-            const startDay = startDate.getUTCDate().toString().padStart(2, '0');
             const endFullDate = dateFormatter.format(endDate);
+            const crossesMonth = startDate.getUTCFullYear() !== endDate.getUTCFullYear()
+                || startDate.getUTCMonth() !== endDate.getUTCMonth();
+            // При переходе месяца или года показываем обе полные даты,
+            // иначе «28-03.01.2027» не позволяет определить начало недели.
+            const startLabel = crossesMonth
+                ? dateFormatter.format(startDate)
+                : pad(startDate.getUTCDate());
 
-            // Результат: "7 неделя, 09-15.02.2026"
-            return `${weekNumber} неделя, ${startDay}-${endFullDate}`;
+            return `${weekNumber} неделя, ${startLabel}–${endFullDate}`;
         }
 
         case 'day': {
