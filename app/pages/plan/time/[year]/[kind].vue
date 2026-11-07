@@ -30,19 +30,13 @@ function open(key: string) {
   navigateTo(listPath(kind.value, key))
 }
 
-// Полный экран — тот же, что у списков плана (кука), чтобы переход из меню не выходил из него
-const fullscreenCookie = useCookie<boolean>('plan-fullscreen', {default: () => false, maxAge: 60 * 60 * 24 * 365, sameSite: 'lax'})
-const hydrated = ref(false)
-onMounted(() => (hydrated.value = true))
-const fullscreen = computed({
-  get: () => hydrated.value && !!fullscreenCookie.value,
-  set: (v: boolean) => (fullscreenCookie.value = v),
-})
+// Общее состояние полного экрана контролируется постоянным layout «Плана».
+const fullscreen = useState<boolean>('plan-fullscreen-active', () => false)
+
 </script>
 
 <template>
-  <PlanShell v-model:fullscreen="fullscreen">
-    <Page fit>
+  <Page fit>
       <template #header>
         <Header>
           {{ year }} — выберите {{ PICK_WHAT[kind] }}
@@ -72,6 +66,5 @@ const fullscreen = computed({
           :current="current"
           @select="open"
       />
-    </Page>
-  </PlanShell>
+  </Page>
 </template>
