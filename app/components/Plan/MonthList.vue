@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {MONTHS, pad} from '~~/shared/utils/planDates'
 
-const props = defineProps<{ year: number; marks?: string[] }>()
+const props = defineProps<{ year: number; marks?: string[]; current?: string }>()
 const marked = computed(() => new Set(props.marks ?? []))
 const months = computed(() => MONTHS.map((name, index) => ({
   key: `${props.year}-${pad(index + 1)}`,
@@ -19,6 +19,7 @@ const months = computed(() => MONTHS.map((name, index) => ({
           :label="month.label"
           :to="`/plan/month/${month.key}`"
           :has-tasks="marked.has(month.key)"
+          :current="month.key === current"
       />
     </div>
   </div>
