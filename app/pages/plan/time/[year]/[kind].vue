@@ -49,12 +49,21 @@ const fullscreen = computed({
           <span v-if="kind === 'weekly'" class="text-toned font-normal">({{ TIME_LABEL.weekly.toLowerCase() }})</span>
           <template #right>
             <HeaderLink :to="listPath(kind, current)" :label="PICK_CURRENT[kind]" icon="i-lucide-house"/>
+            <UTooltip :text="fullscreen ? 'Свернуть' : 'Развернуть'">
+              <UButton
+                  :icon="fullscreen ? 'i-lucide-minimize-2' : 'i-lucide-maximize-2'"
+                  :aria-label="fullscreen ? 'Свернуть' : 'Развернуть'"
+                  color="neutral"
+                  variant="outline"
+                  @click="fullscreen = !fullscreen"
+              />
+            </UTooltip>
           </template>
         </Header>
       </template>
 
-      <PlanMonthList v-if="kind === 'month'" :year="year" :marks="data?.keys ?? []"/>
-      <PlanWeekList v-else-if="kind === 'week' || kind === 'weekly'" :year="year" :kind="kind" :marks="data?.keys ?? []"/>
+      <PlanMonthList v-if="kind === 'month'" :year="year" :marks="data?.keys ?? []" :current="current"/>
+      <PlanWeekList v-else-if="kind === 'week' || kind === 'weekly'" :year="year" :kind="kind" :marks="data?.keys ?? []" :current="current"/>
       <PlanYearCalendar
           v-else
           :year="year"
