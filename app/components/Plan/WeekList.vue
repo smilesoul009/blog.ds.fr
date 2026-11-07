@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import {MONTHS, addDays, mondayOf, pad, parseISO, todayISO} from '~~/shared/utils/planDates'
 
-const props = defineProps<{ year: number; marks?: string[] }>()
+const props = withDefaults(defineProps<{ year: number; marks?: string[]; kind?: 'week' | 'weekly' }>(), {
+  kind: 'week',
+})
 const marked = computed(() => new Set(props.marks ?? []))
 
 interface WeekItem {
@@ -51,7 +53,10 @@ const groups = computed<MonthGroup[]>(() => {
 // не восстанавливает положение списка при возврате из задач недели.
 const root = ref<HTMLElement | null>(null)
 let scroller: HTMLElement | null = null
-const positionKey = () => `plan-week-list-scroll:${props.year}`
+// Сохраняем прежние ключи обычной недели, чтобы позиции пользователей не потерялись.
+const positionKey = (year = props.year) => props.kind === 'weekly'
+    ? `plan-weekly-list-scroll:${year}`
+    : `plan-week-list-scroll:${year}`
 
 function savePosition() {
   if (!scroller) return
@@ -101,11 +106,13 @@ onBeforeUnmount(() => {
   scroller = null
 })
 
-watch(() => props.year, async (_year, previousYear) => {
+watch(() => [props.year, props.kind] as const, async ([_year, newKind], [previousYear, previousKind]) => {
   // При смене года старую прокрутку сохраняем под ключом предыдущего года.
   if (!scroller) return
   try {
-    sessionStorage.setItem(`plan-week-list-scroll:${previousYear}`, String(scroller.scrollTop))
+    sessionStorage.setItem(previousKind === 'weekly'
+        ? `plan-weekly-list-scroll:${previousYear}`
+        : `plan-week-list-scroll:${previousYear}`, String(scroller.scrollTop))
   } catch {}
   await nextTick()
   restorePosition()
@@ -114,7 +121,7 @@ watch(() => props.year, async (_year, previousYear) => {
 
 <template>
   <div ref="root">
-    <p class="mb-2 text-sm text-toned">Недели {{ year }} года · переход к задачам выбранной недели</p>
+    <p class="mb-2 text-sm text-toned">Недели {{ year }} года · переход к {{ kind === 'weekly' ? 'еженедельному плану' : 'задачам выбранной недели' }}</p>
     <div class="flex flex-col gap-1.5">
       <section v-for="group in groups" :key="group.month" class="flex flex-col gap-1.5">
         <div class="flex flex-col gap-[3px] pb-[7px] pt-[10px]">
@@ -125,7 +132,7 @@ watch(() => props.year, async (_year, previousYear) => {
           <PlanPeriodListItem
               type="week"
               :label="week.label"
-              :to="`/plan/week/${week.key}`"
+              :to="`/plan/${kind}/${week.key}`"
               :has-tasks="marked.has(week.key)"
               @click="savePosition"
           />
