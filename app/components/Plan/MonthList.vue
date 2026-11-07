@@ -12,15 +12,14 @@ const months = computed(() => MONTHS.map((name, index) => ({
 <template>
   <div>
     <p class="mb-2 text-sm text-toned">Месяцы {{ year }} года</p>
-    <div class="flex flex-col">
-      <template v-for="(month, index) in months" :key="month.key">
-        <PlanPeriodListItem
-            :label="month.label"
-            :to="`/plan/month/${month.key}`"
-            :has-tasks="marked.has(month.key)"
-        />
-        <div v-if="index < months.length - 1" class="h-px bg-[var(--ui-border-muted)]" aria-hidden="true"/>
-      </template>
+    <div class="flex flex-col gap-1.5">
+      <PlanPeriodListItem
+          v-for="month in months"
+          :key="month.key"
+          :label="month.label"
+          :to="`/plan/month/${month.key}`"
+          :has-tasks="marked.has(month.key)"
+      />
     </div>
   </div>
 </template>
