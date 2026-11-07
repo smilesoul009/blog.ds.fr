@@ -4,7 +4,7 @@ import {
   PICK_CURRENT, PICK_MODE, PICK_WHAT, TIME_LABEL, currentKey, isPickKind, isPlanYear, listPath, type PickKind,
 } from '~~/shared/utils/planYears'
 
-// Экран выбора периода (Месяц, Неделя, День, Еженедельный план): календарь выбранного года.
+// Месяц и Неделя — отдельные списки по макету Figma; День и Еженедельный — существующий календарь года.
 // Клик по дню / неделе / месяцу — список этого периода (или сетка недели). «Текущий …» — сразу текущий период;
 // если выбран не текущий год, переходит на текущий год (меню слева переключится само — год берётся из адреса)
 const route = useRoute()
@@ -42,7 +42,6 @@ const fullscreen = computed({
 
 <template>
   <PlanShell v-model:fullscreen="fullscreen">
-    <!-- fit: рамка по высоте календаря -->
     <Page fit>
       <template #header>
         <Header>
@@ -54,7 +53,10 @@ const fullscreen = computed({
         </Header>
       </template>
 
+      <PlanMonthList v-if="kind === 'month'" :year="year" :marks="data?.keys ?? []"/>
+      <PlanWeekList v-else-if="kind === 'week'" :year="year" :marks="data?.keys ?? []"/>
       <PlanYearCalendar
+          v-else
           :year="year"
           :mode="PICK_MODE[kind]"
           :marks="data?.keys ?? []"
