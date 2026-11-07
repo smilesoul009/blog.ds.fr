@@ -41,7 +41,7 @@ const groups = computed<MonthGroup[]>(() => {
     }
     group.weeks.push({
       key,
-      label: `Неделя ${pad(index)}    ·    ${dateRange(key, addDays(key, 6))}`,
+      label: `${pad(index)} неделя    ·    ${dateRange(key, addDays(key, 6))}`,
     })
   }
   return result
