@@ -4,7 +4,7 @@ import {
   PICK_CURRENT, PICK_MODE, PICK_WHAT, TIME_LABEL, currentKey, isPickKind, isPlanYear, listPath, type PickKind,
 } from '~~/shared/utils/planYears'
 
-// Месяц и Неделя — отдельные списки по макету Figma; День и Еженедельный — существующий календарь года.
+// Месяц — список месяцев; Неделя и Еженедельный план — общий список недель; День — календарь года.
 // Клик по дню / неделе / месяцу — список этого периода (или сетка недели). «Текущий …» — сразу текущий период;
 // если выбран не текущий год, переходит на текущий год (меню слева переключится само — год берётся из адреса)
 const route = useRoute()
@@ -54,7 +54,7 @@ const fullscreen = computed({
       </template>
 
       <PlanMonthList v-if="kind === 'month'" :year="year" :marks="data?.keys ?? []"/>
-      <PlanWeekList v-else-if="kind === 'week'" :year="year" :marks="data?.keys ?? []"/>
+      <PlanWeekList v-else-if="kind === 'week' || kind === 'weekly'" :year="year" :kind="kind" :marks="data?.keys ?? []"/>
       <PlanYearCalendar
           v-else
           :year="year"
