@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {MONTHS, addDays, mondayOf, pad, parseISO} from '~~/shared/utils/planDates'
+import {MONTHS, addDays, mondayOf, pad, parseISO, todayISO} from '~~/shared/utils/planDates'
 
 const props = defineProps<{ year: number; marks?: string[] }>()
 const marked = computed(() => new Set(props.marks ?? []))
@@ -46,10 +46,74 @@ const groups = computed<MonthGroup[]>(() => {
   }
   return result
 })
+
+// Page прокручивает внутренний контейнер, поэтому стандартный scrollBehavior роутера
+// не восстанавливает положение списка при возврате из задач недели.
+const root = ref<HTMLElement | null>(null)
+let scroller: HTMLElement | null = null
+const positionKey = () => `plan-week-list-scroll:${props.year}`
+
+function savePosition() {
+  if (!scroller) return
+  try {
+    sessionStorage.setItem(positionKey(), String(scroller.scrollTop))
+  } catch {
+    // Хранилище может быть недоступно в приватном режиме.
+  }
+}
+
+function restorePosition() {
+  if (!root.value || !scroller) return
+
+  let saved: string | null = null
+  try {
+    saved = sessionStorage.getItem(positionKey())
+  } catch {
+    // При недоступном хранилище используем текущую неделю.
+  }
+  if (saved !== null && saved.trim() !== '' && Number.isFinite(Number(saved)) && Number(saved) >= 0) {
+    scroller.scrollTop = Number(saved)
+    return
+  }
+
+  const currentWeek = mondayOf(todayISO())
+  const item = [...root.value.querySelectorAll<HTMLElement>('[data-week-key]')]
+      .find(row => row.dataset.weekKey === currentWeek)
+  if (!item) {
+    scroller.scrollTop = 0
+    return
+  }
+
+  // Выравниваем текущую неделю по верху прокручиваемой области с небольшим отступом.
+  scroller.scrollTop += item.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 12
+}
+
+onMounted(async () => {
+  await nextTick()
+  scroller = root.value?.closest<HTMLElement>('.overflow-y-auto') ?? null
+  restorePosition()
+  scroller?.addEventListener('scroll', savePosition, {passive: true})
+})
+
+onBeforeUnmount(() => {
+  savePosition()
+  scroller?.removeEventListener('scroll', savePosition)
+  scroller = null
+})
+
+watch(() => props.year, async (_year, previousYear) => {
+  // При смене года старую прокрутку сохраняем под ключом предыдущего года.
+  if (!scroller) return
+  try {
+    sessionStorage.setItem(`plan-week-list-scroll:${previousYear}`, String(scroller.scrollTop))
+  } catch {}
+  await nextTick()
+  restorePosition()
+})
 </script>
 
 <template>
-  <div>
+  <div ref="root">
     <p class="mb-2 text-sm text-toned">Недели {{ year }} года · переход к задачам выбранной недели</p>
     <div class="flex flex-col gap-1.5">
       <section v-for="group in groups" :key="group.month" class="flex flex-col gap-1.5">
@@ -57,14 +121,15 @@ const groups = computed<MonthGroup[]>(() => {
           <h2 class="text-sm font-medium text-toned">{{ group.month }}</h2>
           <div class="h-px bg-[var(--ui-border-muted)]" aria-hidden="true"/>
         </div>
-        <template v-for="week in group.weeks" :key="week.key">
+        <div v-for="week in group.weeks" :key="week.key" :data-week-key="week.key">
           <PlanPeriodListItem
               type="week"
               :label="week.label"
               :to="`/plan/week/${week.key}`"
               :has-tasks="marked.has(week.key)"
+              @click="savePosition"
           />
-        </template>
+        </div>
       </section>
     </div>
   </div>
