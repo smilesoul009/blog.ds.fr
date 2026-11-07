@@ -18,7 +18,7 @@ withDefaults(defineProps<{
   <NuxtLink
       :to="to"
       class="flex h-12 w-full items-center gap-2 rounded-xs px-5 text-sm font-normal text-default
-             bg-gradient-to-r from-[rgba(255,246,232,0.48)] to-[rgba(232,220,200,0.28)]
+             border border-[#BDC0C4] bg-[#ECEDEE]
              transition-[filter,box-shadow] hover:brightness-[0.97] focus-visible:outline-none
              focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gray-500"
   >
